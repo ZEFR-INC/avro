@@ -150,7 +150,7 @@ static {
 #end
 #end
    */
-  public ${this.mangle($schema.getName())}(#foreach($field in $schema.getFields())${this.javaType($field.schema())} ${this.mangle($field.name())}#if($foreach.count < $schema.getFields().size()), #end#end) {
+  public ${this.mangle($schema.getName())}(#foreach($field in $schema.getFields())#foreach ($annotation in $this.javaAnnotations($field))@$annotation #end${this.javaType($field.schema())} ${this.mangle($field.name())}#if($foreach.count < $schema.getFields().size()), #end#end) {
 #foreach ($field in $schema.getFields())
     this.${this.mangle($field.name())} = ${this.mangle($field.name())};
 #end
@@ -226,7 +226,7 @@ static {
 #else   * @return The value of the '${this.mangle($field.name(), $schema.isError())}' field.
 #end
    */
-  public ${this.javaUnbox($field.schema())} ${this.generateGetMethod($schema, $field)}() {
+  public #foreach ($annotation in $this.javaAnnotations($field))@$annotation #end${this.javaUnbox($field.schema())} ${this.generateGetMethod($schema, $field)}() {
     return ${this.mangle($field.name(), $schema.isError())};
   }
 #end
@@ -250,7 +250,7 @@ static {
 #end
    * @param value the value to set.
    */
-  public void ${this.generateSetMethod($schema, $field)}(${this.javaUnbox($field.schema())} value) {
+  public void ${this.generateSetMethod($schema, $field)}(#foreach ($annotation in $this.javaAnnotations($field))@$annotation #end${this.javaUnbox($field.schema())} value) {
     this.${this.mangle($field.name(), $schema.isError())} = value;
   }
 #end
@@ -382,7 +382,7 @@ static {
 #end
       * @return The value.
       */
-    public ${this.javaUnbox($field.schema())} ${this.generateGetMethod($schema, $field)}() {
+    public #foreach ($annotation in $this.javaAnnotations($field))@$annotation #end${this.javaUnbox($field.schema())} ${this.generateGetMethod($schema, $field)}() {
       return ${this.mangle($field.name(), $schema.isError())};
     }
 
@@ -405,7 +405,7 @@ static {
       * @param value The value of '${this.mangle($field.name(), $schema.isError())}'.
       * @return This builder.
       */
-    public #if ($schema.getNamespace())$schema.getNamespace().#end${this.mangle($schema.getName())}.Builder ${this.generateSetMethod($schema, $field)}(${this.javaUnbox($field.schema())} value) {
+    public #if ($schema.getNamespace())$schema.getNamespace().#end${this.mangle($schema.getName())}.Builder ${this.generateSetMethod($schema, $field)}(#foreach ($annotation in $this.javaAnnotations($field))@$annotation #end${this.javaUnbox($field.schema())} value) {
       validate(fields()[$field.pos()], value);
 #if (${this.hasBuilder($field.schema())})
       this.${this.mangle($field.name(), $schema.isError())}Builder = null;
@@ -536,7 +536,7 @@ static {
 #if ($this.isCustomCodable($schema))
   @Override protected boolean hasCustomCoders() { return true; }
 
-  @Override protected void customEncode(org.apache.avro.io.Encoder out)
+  @Override public void customEncode(org.apache.avro.io.Encoder out)
     throws java.io.IOException
   {
 #set ($nv = 0)## Counter to ensure unique var-names
@@ -550,7 +550,7 @@ static {
 #end
   }
 
-  @Override protected void customDecode(org.apache.avro.io.ResolvingDecoder in)
+  @Override public void customDecode(org.apache.avro.io.ResolvingDecoder in)
     throws java.io.IOException
   {
     org.apache.avro.Schema.Field[] fieldOrder = in.readFieldOrderIfDiff();
