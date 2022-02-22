@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,31 +19,33 @@ package org.apache.avro;
 
 import static org.junit.Assert.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
+import org.apache.avro.generic.GenericData;
 import org.junit.Test;
 
 public class TestSchema {
   @Test
   public void testSplitSchemaBuild() {
-    Schema s = SchemaBuilder
-        .record("HandshakeRequest")
-        .namespace("org.apache.avro.ipc").fields()
-        .name("clientProtocol").type().optional().stringType()
-        .name("meta").type().optional().map().values().bytesType()
-        .endRecord();
+    Schema s = SchemaBuilder.record("HandshakeRequest").namespace("org.apache.avro.ipc").fields().name("clientProtocol")
+        .type().optional().stringType().name("meta").type().optional().map().values().bytesType().endRecord();
 
     String schemaString = s.toString();
     int mid = schemaString.length() / 2;
 
     Schema parsedStringSchema = new org.apache.avro.Schema.Parser().parse(s.toString());
-    Schema parsedArrayOfStringSchema =
-        new org.apache.avro.Schema.Parser().parse
-            (schemaString.substring(0, mid), schemaString.substring(mid));
+    Schema parsedArrayOfStringSchema = new org.apache.avro.Schema.Parser().parse(schemaString.substring(0, mid),
+        schemaString.substring(mid));
     assertNotNull(parsedStringSchema);
     assertNotNull(parsedArrayOfStringSchema);
     assertEquals(parsedStringSchema.toString(), parsedArrayOfStringSchema.toString());
@@ -98,7 +100,7 @@ public class TestSchema {
 
   @Test(expected = SchemaParseException.class)
   public void testParseEmptySchema() {
-    Schema schema = new Schema.Parser().parse("");
+    new Schema.Parser().parse("");
   }
 
   @Test
@@ -182,4 +184,186 @@ public class TestSchema {
     return Schema.createRecord("name", "doc", "namespace", false);
   }
 
+  @Test
+  public void testSerialization() throws IOException, ClassNotFoundException {
+    try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        InputStream jsonSchema = getClass().getResourceAsStream("/SchemaBuilder.avsc")) {
+
+      Schema payload = new Schema.Parser().parse(jsonSchema);
+      oos.writeObject(payload);
+
+      try (ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+          ObjectInputStream ois = new ObjectInputStream(bis)) {
+        Schema sp = (Schema) ois.readObject();
+        assertEquals(payload, sp);
+      }
+    }
+  }
+
+  @Test
+  public void testReconstructSchemaStringWithoutInlinedChildReference() {
+    String child = "{\"type\":\"record\"," + "\"name\":\"Child\"," + "\"namespace\":\"org.apache.avro.nested\","
+        + "\"fields\":" + "[{\"name\":\"childField\",\"type\":\"string\"}]}";
+    String parent = "{\"type\":\"record\"," + "\"name\":\"Parent\"," + "\"namespace\":\"org.apache.avro.nested\","
+        + "\"fields\":" + "[{\"name\":\"child\",\"type\":\"Child\"}]}";
+    Schema.Parser parser = new Schema.Parser();
+    Schema childSchema = parser.parse(child);
+    Schema parentSchema = parser.parse(parent);
+    String parentWithoutInlinedChildReference = parentSchema.toString(Collections.singleton(childSchema), false);
+    // The generated string should be the same as the original parent
+    // schema string that did not have the child schema inlined.
+    assertEquals(parent, parentWithoutInlinedChildReference);
+  }
+
+  @Test
+  public void testIntDefaultValue() {
+    Schema.Field field = new Schema.Field("myField", Schema.create(Schema.Type.INT), "doc", 1);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(1, field.defaultVal());
+    assertEquals(1, GenericData.get().getDefaultValue(field));
+
+    field = new Schema.Field("myField", Schema.create(Schema.Type.INT), "doc", Integer.MIN_VALUE);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(Integer.MIN_VALUE, field.defaultVal());
+    assertEquals(Integer.MIN_VALUE, GenericData.get().getDefaultValue(field));
+
+    field = new Schema.Field("myField", Schema.create(Schema.Type.INT), "doc", Integer.MAX_VALUE);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(Integer.MAX_VALUE, field.defaultVal());
+    assertEquals(Integer.MAX_VALUE, GenericData.get().getDefaultValue(field));
+  }
+
+  @Test
+  public void testValidLongAsIntDefaultValue() {
+    Schema.Field field = new Schema.Field("myField", Schema.create(Schema.Type.INT), "doc", 1L);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(1, field.defaultVal());
+    assertEquals(1, GenericData.get().getDefaultValue(field));
+
+    field = new Schema.Field("myField", Schema.create(Schema.Type.INT), "doc", Long.valueOf(Integer.MIN_VALUE));
+    assertTrue(field.hasDefaultValue());
+    assertEquals(Integer.MIN_VALUE, field.defaultVal());
+    assertEquals(Integer.MIN_VALUE, GenericData.get().getDefaultValue(field));
+
+    field = new Schema.Field("myField", Schema.create(Schema.Type.INT), "doc", Long.valueOf(Integer.MAX_VALUE));
+    assertTrue(field.hasDefaultValue());
+    assertEquals(Integer.MAX_VALUE, field.defaultVal());
+    assertEquals(Integer.MAX_VALUE, GenericData.get().getDefaultValue(field));
+  }
+
+  @Test(expected = AvroTypeException.class)
+  public void testInvalidLongAsIntDefaultValue() {
+    new Schema.Field("myField", Schema.create(Schema.Type.INT), "doc", Integer.MAX_VALUE + 1L);
+  }
+
+  @Test(expected = AvroTypeException.class)
+  public void testDoubleAsIntDefaultValue() {
+    new Schema.Field("myField", Schema.create(Schema.Type.INT), "doc", 1.0);
+  }
+
+  @Test
+  public void testLongDefaultValue() {
+    Schema.Field field = new Schema.Field("myField", Schema.create(Schema.Type.LONG), "doc", 1L);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(1L, field.defaultVal());
+    assertEquals(1L, GenericData.get().getDefaultValue(field));
+
+    field = new Schema.Field("myField", Schema.create(Schema.Type.LONG), "doc", Long.MIN_VALUE);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(Long.MIN_VALUE, field.defaultVal());
+    assertEquals(Long.MIN_VALUE, GenericData.get().getDefaultValue(field));
+
+    field = new Schema.Field("myField", Schema.create(Schema.Type.LONG), "doc", Long.MAX_VALUE);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(Long.MAX_VALUE, field.defaultVal());
+    assertEquals(Long.MAX_VALUE, GenericData.get().getDefaultValue(field));
+  }
+
+  @Test
+  public void testIntAsLongDefaultValue() {
+    Schema.Field field = new Schema.Field("myField", Schema.create(Schema.Type.LONG), "doc", 1);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(1L, field.defaultVal());
+    assertEquals(1L, GenericData.get().getDefaultValue(field));
+  }
+
+  @Test(expected = AvroTypeException.class)
+  public void testDoubleAsLongDefaultValue() {
+    new Schema.Field("myField", Schema.create(Schema.Type.LONG), "doc", 1.0);
+  }
+
+  @Test
+  public void testDoubleDefaultValue() {
+    Schema.Field field = new Schema.Field("myField", Schema.create(Schema.Type.DOUBLE), "doc", 1.0);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(1.0d, field.defaultVal());
+    assertEquals(1.0d, GenericData.get().getDefaultValue(field));
+  }
+
+  @Test
+  public void testIntAsDoubleDefaultValue() {
+    Schema.Field field = new Schema.Field("myField", Schema.create(Schema.Type.DOUBLE), "doc", 1);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(1.0d, field.defaultVal());
+    assertEquals(1.0d, GenericData.get().getDefaultValue(field));
+  }
+
+  @Test
+  public void testLongAsDoubleDefaultValue() {
+    Schema.Field field = new Schema.Field("myField", Schema.create(Schema.Type.DOUBLE), "doc", 1L);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(1.0d, field.defaultVal());
+    assertEquals(1.0d, GenericData.get().getDefaultValue(field));
+  }
+
+  @Test
+  public void testFloatAsDoubleDefaultValue() {
+    Schema.Field field = new Schema.Field("myField", Schema.create(Schema.Type.DOUBLE), "doc", 1.0f);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(1.0d, field.defaultVal());
+    assertEquals(1.0d, GenericData.get().getDefaultValue(field));
+  }
+
+  @Test
+  public void testFloatDefaultValue() {
+    Schema.Field field = new Schema.Field("myField", Schema.create(Schema.Type.FLOAT), "doc", 1.0f);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(1.0f, field.defaultVal());
+    assertEquals(1.0f, GenericData.get().getDefaultValue(field));
+  }
+
+  @Test
+  public void testIntAsFloatDefaultValue() {
+    Schema.Field field = new Schema.Field("myField", Schema.create(Schema.Type.FLOAT), "doc", 1);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(1.0f, field.defaultVal());
+    assertEquals(1.0f, GenericData.get().getDefaultValue(field));
+  }
+
+  @Test
+  public void testLongAsFloatDefaultValue() {
+    Schema.Field field = new Schema.Field("myField", Schema.create(Schema.Type.FLOAT), "doc", 1L);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(1.0f, field.defaultVal());
+    assertEquals(1.0f, GenericData.get().getDefaultValue(field));
+  }
+
+  @Test
+  public void testDoubleAsFloatDefaultValue() {
+    Schema.Field field = new Schema.Field("myField", Schema.create(Schema.Type.FLOAT), "doc", 1.0d);
+    assertTrue(field.hasDefaultValue());
+    assertEquals(1.0f, field.defaultVal());
+    assertEquals(1.0f, GenericData.get().getDefaultValue(field));
+  }
+
+  @Test(expected = SchemaParseException.class)
+  public void testEnumSymbolAsNull() {
+    Schema.createEnum("myField", "doc", "namespace", Collections.singletonList(null));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void testSchemaFieldWithoutSchema() {
+    new Schema.Field("f", null);
+  }
 }

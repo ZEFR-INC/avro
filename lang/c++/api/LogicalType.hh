@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,7 +26,7 @@
 namespace avro {
 
 class AVRO_DECL LogicalType {
-  public:
+public:
     enum Type {
         NONE,
         DECIMAL,
@@ -35,7 +35,8 @@ class AVRO_DECL LogicalType {
         TIME_MICROS,
         TIMESTAMP_MILLIS,
         TIMESTAMP_MICROS,
-        DURATION
+        DURATION,
+        UUID
     };
 
     explicit LogicalType(Type type);
@@ -51,14 +52,14 @@ class AVRO_DECL LogicalType {
     void setScale(int scale);
     int scale() const { return scale_; }
 
-    void printJson(std::ostream& os) const;
+    void printJson(std::ostream &os) const;
 
-  private:
+private:
     Type type_;
     int precision_;
     int scale_;
 };
 
-}  // namespace avro
+} // namespace avro
 
 #endif

@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,14 +43,16 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import static org.apache.avro.TestSchemas.ENUM1_AB_SCHEMA_NAMESPACE_1;
+import static org.apache.avro.TestSchemas.ENUM1_AB_SCHEMA_NAMESPACE_2;
+
 @RunWith(Parameterized.class)
 public class TestResolvingGrammarGenerator {
   private final Schema schema;
   private final JsonNode data;
 
-  public TestResolvingGrammarGenerator(String jsonSchema, String jsonData)
-    throws IOException {
-    this.schema = Schema.parse(jsonSchema);
+  public TestResolvingGrammarGenerator(String jsonSchema, String jsonData) throws IOException {
+    this.schema = new Schema.Parser().parse(jsonSchema);
     JsonFactory factory = new JsonFactory();
     ObjectMapper mapper = new ObjectMapper(factory);
 
@@ -61,8 +63,7 @@ public class TestResolvingGrammarGenerator {
   public void test() throws IOException {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     EncoderFactory factory = EncoderFactory.get();
-    Encoder e = factory.validatingEncoder(schema,
-        factory.binaryEncoder(baos, null));
+    Encoder e = factory.validatingEncoder(schema, factory.binaryEncoder(baos, null));
 
     ResolvingGrammarGenerator.encode(e, schema, data);
     e.flush();
@@ -70,17 +71,10 @@ public class TestResolvingGrammarGenerator {
 
   @Test
   public void testRecordMissingRequiredFieldError() throws Exception {
-    Schema schemaWithoutField = SchemaBuilder
-        .record("MyRecord").namespace("ns")
-        .fields()
-          .name("field1").type().stringType().noDefault()
-        .endRecord();
-    Schema schemaWithField = SchemaBuilder
-        .record("MyRecord").namespace("ns")
-        .fields()
-          .name("field1").type().stringType().noDefault()
-          .name("field2").type().stringType().noDefault()
-        .endRecord();
+    Schema schemaWithoutField = SchemaBuilder.record("MyRecord").namespace("ns").fields().name("field1").type()
+        .stringType().noDefault().endRecord();
+    Schema schemaWithField = SchemaBuilder.record("MyRecord").namespace("ns").fields().name("field1").type()
+        .stringType().noDefault().name("field2").type().stringType().noDefault().endRecord();
     GenericData.Record record = new GenericRecordBuilder(schemaWithoutField).set("field1", "someValue").build();
     byte[] data = writeRecord(schemaWithoutField, record);
     try {
@@ -92,49 +86,41 @@ public class TestResolvingGrammarGenerator {
     }
   }
 
+  @Test
+  public void testDifferingEnumNamespaces() throws Exception {
+    Schema schema1 = SchemaBuilder.record("MyRecord").fields().name("field").type(ENUM1_AB_SCHEMA_NAMESPACE_1)
+        .noDefault().endRecord();
+    Schema schema2 = SchemaBuilder.record("MyRecord").fields().name("field").type(ENUM1_AB_SCHEMA_NAMESPACE_2)
+        .noDefault().endRecord();
+    GenericData.EnumSymbol genericEnumSymbol = new GenericData.EnumSymbol(ENUM1_AB_SCHEMA_NAMESPACE_1, "A");
+    GenericData.Record record = new GenericRecordBuilder(schema1).set("field", genericEnumSymbol).build();
+    byte[] data = writeRecord(schema1, record);
+    Assert.assertEquals(genericEnumSymbol, readRecord(schema1, data).get("field"));
+    Assert.assertEquals(genericEnumSymbol, readRecord(schema2, data).get("field"));
+  }
+
   @Parameterized.Parameters
   public static Collection<Object[]> data() {
-    Collection<Object[]> ret = Arrays.asList(
-        new Object[][] {
-            { "{ \"type\": \"record\", \"name\": \"r\", \"fields\": [ "
-                + " { \"name\" : \"f1\", \"type\": \"int\" }, "
-                + " { \"name\" : \"f2\", \"type\": \"float\" } "
-                + "] } }",
-              "{ \"f2\": 10.4, \"f1\": 10 } " },
-            { "{ \"type\": \"enum\", \"name\": \"e\", \"symbols\": "
-                + "[ \"s1\", \"s2\"] } }", " \"s1\" " },
-            { "{ \"type\": \"enum\", \"name\": \"e\", \"symbols\": "
-                + "[ \"s1\", \"s2\"] } }", " \"s2\" " },
-            { "{ \"type\": \"fixed\", \"name\": \"f\", \"size\": 10 }",
-              "\"hello\"" },
-            { "{ \"type\": \"array\", \"items\": \"int\" }",
-              "[ 10, 20, 30 ]" },
-            { "{ \"type\": \"map\", \"values\": \"int\" }",
-              "{ \"k1\": 10, \"k3\": 20, \"k3\": 30 }" },
-            { "[ \"int\", \"long\" ]", "10" },
-            { "\"string\"", "\"hello\"" },
-            { "\"bytes\"", "\"hello\"" },
-            { "\"int\"", "10" },
-            { "\"long\"", "10" },
-            { "\"float\"", "10.0" },
-            { "\"double\"", "10.0" },
-            { "\"boolean\"", "true" },
-            { "\"boolean\"", "false" },
-            { "\"null\"", "null" },
-            }
-        );
+    Collection<Object[]> ret = Arrays.asList(new Object[][] {
+        { "{ \"type\": \"record\", \"name\": \"r\", \"fields\": [ " + " { \"name\" : \"f1\", \"type\": \"int\" }, "
+            + " { \"name\" : \"f2\", \"type\": \"float\" } " + "] } }", "{ \"f2\": 10.4, \"f1\": 10 } " },
+        { "{ \"type\": \"enum\", \"name\": \"e\", \"symbols\": " + "[ \"s1\", \"s2\"] } }", " \"s1\" " },
+        { "{ \"type\": \"enum\", \"name\": \"e\", \"symbols\": " + "[ \"s1\", \"s2\"] } }", " \"s2\" " },
+        { "{ \"type\": \"fixed\", \"name\": \"f\", \"size\": 10 }", "\"hello\"" },
+        { "{ \"type\": \"array\", \"items\": \"int\" }", "[ 10, 20, 30 ]" },
+        { "{ \"type\": \"map\", \"values\": \"int\" }", "{ \"k1\": 10, \"k3\": 20, \"k3\": 30 }" },
+        { "[ \"int\", \"long\" ]", "10" }, { "\"string\"", "\"hello\"" }, { "\"bytes\"", "\"hello\"" },
+        { "\"int\"", "10" }, { "\"long\"", "10" }, { "\"float\"", "10.0" }, { "\"double\"", "10.0" },
+        { "\"boolean\"", "true" }, { "\"boolean\"", "false" }, { "\"null\"", "null" }, });
     return ret;
   }
 
   private byte[] writeRecord(Schema schema, GenericData.Record record) throws Exception {
     ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
     GenericDatumWriter<GenericData.Record> datumWriter = new GenericDatumWriter<>(schema);
-    DataFileWriter<GenericData.Record> writer = new DataFileWriter<>(datumWriter);
-    try {
+    try (DataFileWriter<GenericData.Record> writer = new DataFileWriter<>(datumWriter)) {
       writer.create(schema, byteStream);
       writer.append(record);
-    } finally {
-      writer.close();
     }
     return byteStream.toByteArray();
   }
@@ -142,11 +128,8 @@ public class TestResolvingGrammarGenerator {
   private GenericData.Record readRecord(Schema schema, byte[] data) throws Exception {
     ByteArrayInputStream byteStream = new ByteArrayInputStream(data);
     GenericDatumReader<GenericData.Record> datumReader = new GenericDatumReader<>(schema);
-    DataFileStream<GenericData.Record> reader = new DataFileStream<>(byteStream, datumReader);
-    try {
+    try (DataFileStream<GenericData.Record> reader = new DataFileStream<>(byteStream, datumReader)) {
       return reader.next();
-    } finally {
-      reader.close();
     }
   }
 }

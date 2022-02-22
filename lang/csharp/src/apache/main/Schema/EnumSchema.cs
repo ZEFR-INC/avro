@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,6 +33,11 @@ namespace Avro
         public IList<string> Symbols { get; private set;  }
 
         /// <summary>
+        /// The default token to use when deserializing an enum when the provided token is not found
+        /// </summary>
+        public string Default { get; private set; }
+
+        /// <summary>
         /// Map of enum symbols and it's corresponding ordinal number
         /// </summary>
         private readonly IDictionary<string, int> symbolMap;
@@ -46,6 +51,7 @@ namespace Avro
         /// Static function to return new instance of EnumSchema
         /// </summary>
         /// <param name="jtok">JSON object for enum schema</param>
+        /// <param name="props">dictionary that provides access to custom properties</param>
         /// <param name="names">list of named schema already parsed in</param>
         /// <param name="encspace">enclosing namespace for the enum schema</param>
         /// <returns>new instance of enum schema</returns>
@@ -56,7 +62,7 @@ namespace Avro
 
             JArray jsymbols = jtok["symbols"] as JArray;
             if (null == jsymbols)
-                throw new SchemaParseException("Enum has no symbols: " + name);
+                throw new SchemaParseException($"Enum has no symbols: {name} at '{jtok.Path}'");
 
             List<string> symbols = new List<string>();
             IDictionary<string, int> symbolMap = new Dictionary<string, int>();
@@ -65,13 +71,20 @@ namespace Avro
             {
                 string s = (string)jsymbol.Value;
                 if (symbolMap.ContainsKey(s))
-                    throw new SchemaParseException("Duplicate symbol: " + s);
+                    throw new SchemaParseException($"Duplicate symbol: {s} at '{jtok.Path}'");
 
                 symbolMap[s] = i++;
                 symbols.Add(s);
             }
-            return new EnumSchema(name, aliases, symbols, symbolMap, props, names,
-                JsonHelper.GetOptionalString(jtok, "doc"));
+            try
+            {
+                return new EnumSchema(name, aliases, symbols, symbolMap, props, names,
+                    JsonHelper.GetOptionalString(jtok, "doc"), JsonHelper.GetOptionalString(jtok, "default"));
+            }
+            catch (SchemaParseException e)
+            {
+                throw new SchemaParseException($"{e.Message} at '{jtok.Path}'", e);
+            }
         }
 
         /// <summary>
@@ -84,14 +97,19 @@ namespace Avro
         /// <param name="props">custom properties on this schema</param>
         /// <param name="names">list of named schema already read</param>
         /// <param name="doc">documentation for this named schema</param>
+        /// <param name="defaultSymbol">default symbol</param>
         private EnumSchema(SchemaName name, IList<SchemaName> aliases, List<string> symbols,
                             IDictionary<String, int> symbolMap, PropertyMap props, SchemaNames names,
-                            string doc)
+                            string doc, string defaultSymbol)
                             : base(Type.Enumeration, name, aliases, props, names, doc)
         {
             if (null == name.Name) throw new SchemaParseException("name cannot be null for enum schema.");
             this.Symbols = symbols;
             this.symbolMap = symbolMap;
+
+            if (null != defaultSymbol && !symbolMap.ContainsKey(defaultSymbol))
+                throw new SchemaParseException($"Default symbol: {defaultSymbol} not found in symbols");
+            Default = defaultSymbol;
         }
 
         /// <summary>
@@ -109,6 +127,11 @@ namespace Avro
             foreach (string s in this.Symbols)
                 writer.WriteValue(s);
             writer.WriteEndArray();
+            if (null != Default) 
+            {
+                writer.WritePropertyName("default");
+                writer.WriteValue(Default);
+            }
         }
 
         /// <summary>
@@ -116,12 +139,24 @@ namespace Avro
         /// Throws AvroException if the symbol is not found in this enum.
         /// </summary>
         /// <param name="symbol">name of the symbol to find</param>
-        /// <returns>position of the given symbol in this enum schema</returns>
+        /// <returns>
+        /// position of the given symbol in this enum schema
+        /// </returns>
+        /// <exception cref="Avro.AvroException">No such symbol: {symbol}</exception>
         public int Ordinal(string symbol)
         {
             int result;
-            if (symbolMap.TryGetValue(symbol, out result)) return result;
-            throw new AvroException("No such symbol: " + symbol);
+            if (symbolMap.TryGetValue(symbol, out result))
+            {
+                return result;
+            }
+
+            if (Default != null && symbolMap.TryGetValue(Default, out result))
+            {
+                return result;
+            }
+
+            throw new AvroException($"No such symbol: {symbol}");
         }
 
         /// <summary>
@@ -170,7 +205,14 @@ namespace Avro
                 EnumSchema that = obj as EnumSchema;
                 if (SchemaName.Equals(that.SchemaName) && Count == that.Count)
                 {
-                    for (int i = 0; i < Count; i++) if (!Symbols[i].Equals(that.Symbols[i])) return false;
+                    for (int i = 0; i < Count; i++)
+                    {
+                        if (!Symbols[i].Equals(that.Symbols[i], StringComparison.Ordinal))
+                        {
+                            return false;
+                        }
+                    }
+
                     return areEqual(that.Props, this.Props);
                 }
             }
@@ -184,7 +226,9 @@ namespace Avro
         public override int GetHashCode()
         {
             int result = SchemaName.GetHashCode() + getHashCode(Props);
+#pragma warning disable CA1307 // Specify StringComparison
             foreach (string s in Symbols) result += 23 * s.GetHashCode();
+#pragma warning restore CA1307 // Specify StringComparison
             return result;
         }
 

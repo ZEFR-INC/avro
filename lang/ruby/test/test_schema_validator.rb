@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -6,7 +7,7 @@
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+# https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +17,9 @@
 
 require 'test_help'
 
-class TestSchema < Test::Unit::TestCase
-  def validate!(schema, value)
-    Avro::SchemaValidator.validate!(schema, value)
+class TestSchemaValidator < Test::Unit::TestCase
+  def validate!(schema, value, options = {})
+    Avro::SchemaValidator.validate!(schema, value, options)
   end
 
   def validate_simple!(schema, value)
@@ -110,6 +111,13 @@ class TestSchema < Test::Unit::TestCase
     assert_failed_validation('at . expected fixed with size 3, got null') do
       validate_simple!(schema, nil)
     end
+
+    assert_failed_validation("at . expected fixed with size 3, got \"a\u2014b\" with size 5") do
+      validate!(schema, "a\u2014b")
+    end
+    assert_failed_validation("at . expected fixed with size 3, got \"a\u2014b\" with size 5") do
+      validate_simple!(schema, "a\u2014b")
+    end
   end
 
   def test_original_validate_nil
@@ -162,13 +170,13 @@ class TestSchema < Test::Unit::TestCase
   def test_validate_float
     schema = hash_to_schema(type: 'float', name: 'name')
 
-    assert_valid_schema(schema, [1.1, 1, Avro::Schema::LONG_MAX_VALUE], ['string'], true)
+    assert_valid_schema(schema, [1.1, 1, BigDecimal('1.1'), Avro::Schema::LONG_MAX_VALUE], ['string'], true)
   end
 
   def test_validate_double
     schema = hash_to_schema(type: 'double', name: 'name')
 
-    assert_valid_schema(schema, [1.1, 1, Avro::Schema::LONG_MAX_VALUE], ['string'], true)
+    assert_valid_schema(schema, [1.1, 1, BigDecimal('1.1'), Avro::Schema::LONG_MAX_VALUE], ['string'], true)
   end
 
   def test_validate_fixed
@@ -187,6 +195,12 @@ class TestSchema < Test::Unit::TestCase
     schema = hash_to_schema(type: 'record', name: 'name', fields: [{ type: 'null', name: 'sub' }])
 
     assert_valid_schema(schema, [{ 'sub' => nil }], [{ 'sub' => 1 }])
+  end
+
+  def test_validate_record_with_symbol_keys
+    schema = hash_to_schema(type: 'record', name: 'name', fields: [{ type: 'int', name: 'sub' }])
+
+    assert_valid_schema(schema, [{ sub: 1 }], [{ sub: '1' }])
   end
 
   def test_validate_shallow_record
@@ -270,7 +284,7 @@ class TestSchema < Test::Unit::TestCase
 
   def test_validate_union_of_nil_and_record_inside_array
     schema = hash_to_schema(
-      name: 'this does not matter',
+      name: 'this_does_not_matter',
       type: 'record',
       fields: [
         {
@@ -460,5 +474,102 @@ class TestSchema < Test::Unit::TestCase
       "at .[0] expected type int, got null\nat .[1] expected type int, got string with value \"e\"",
       exception.to_s
     )
+  end
+
+  def test_validate_extra_fields
+    schema = hash_to_schema(
+               type: 'record',
+               name: 'fruits',
+               fields: [
+                 {
+                   name: 'veggies',
+                   type: 'string'
+                 }
+                     ]
+    )
+    exception = assert_raise(Avro::SchemaValidator::ValidationError) do
+      validate!(schema, {'veggies' => 'tomato', 'bread' => 'rye'}, fail_on_extra_fields: true)
+    end
+    assert_equal(1, exception.result.errors.size)
+    assert_equal("at . extra field 'bread' - not in schema",
+                 exception.to_s)
+  end
+
+  def test_validate_subrecord_extra_fields
+   schema = hash_to_schema(type: 'record',
+                           name: 'top',
+                           fields: [
+                             {
+                                name: 'fruit',
+                                type: {
+                                  name: 'fruit',
+                                  type: 'record',
+                                  fields: [{ name: 'name', type: 'string' }]
+                                }
+                             }
+                           ])
+    exception = assert_raise(Avro::SchemaValidator::ValidationError) do
+      validate!(schema, { 'fruit' => { 'name' => 'orange', 'color' => 'orange' } }, fail_on_extra_fields: true)
+    end
+    assert_equal(1, exception.result.errors.size)
+    assert_equal("at .fruit extra field 'color' - not in schema", exception.to_s)
+  end
+
+  def test_validate_array_extra_fields
+    schema = hash_to_schema(type: 'array',
+                            items: {
+                              name: 'fruit',
+                              type: 'record',
+                              fields: [{ name: 'name', type: 'string' }]
+                            })
+    exception = assert_raise(Avro::SchemaValidator::ValidationError) do
+      validate!(schema, [{ 'name' => 'orange', 'color' => 'orange' }], fail_on_extra_fields: true)
+    end
+    assert_equal(1, exception.result.errors.size)
+    assert_equal("at .[0] extra field 'color' - not in schema", exception.to_s)
+  end
+
+  def test_validate_map_extra_fields
+    schema = hash_to_schema(type: 'map',
+                            values: {
+                              name: 'fruit',
+                              type: 'record',
+                              fields: [{ name: 'color', type: 'string' }]
+                            })
+    exception = assert_raise(Avro::SchemaValidator::ValidationError) do
+      validate!(schema, { 'apple' => { 'color' => 'green', 'extra' => 1 } }, fail_on_extra_fields: true)
+    end
+    assert_equal(1, exception.result.errors.size)
+    assert_equal("at .apple extra field 'extra' - not in schema", exception.to_s)
+  end
+
+  def test_validate_union_extra_fields
+    schema = hash_to_schema([
+                              'null',
+                              {
+                                type: 'record',
+                                name: 'fruit',
+                                fields: [{ name: 'name', type: 'string' }]
+                              }
+                            ])
+    exception = assert_raise(Avro::SchemaValidator::ValidationError) do
+      validate!(schema, { 'name' => 'apple', 'color' => 'green' }, fail_on_extra_fields: true)
+    end
+    assert_equal(1, exception.result.errors.size)
+    assert_equal("at . extra field 'color' - not in schema", exception.to_s)
+  end
+
+  def test_validate_bytes_decimal
+    schema = hash_to_schema(type: 'bytes', logicalType: 'decimal', precision: 4, scale: 2)
+    assert_valid_schema(schema, [BigDecimal('1.23'), 4.2, 1], ['4.2', BigDecimal('233.2')], true)
+
+    schema = hash_to_schema(type: 'bytes', logicalType: 'decimal', precision: 4, scale: 4)
+    assert_valid_schema(schema, [BigDecimal('0.2345'), 0.2, 0.1], ['4.2', BigDecimal('233.2')], true)
+
+    schema = hash_to_schema(type: 'bytes', logicalType: 'decimal', precision: 4, scale: 0)
+    assert_valid_schema(schema, [BigDecimal('123'), 2], ['4.2', BigDecimal('233.2')], true)
+
+    schema = hash_to_schema(type: 'bytes', logicalType: 'decimal', precision: 4)
+    assert_valid_schema(schema, [BigDecimal('123'), 2], ['4.2', BigDecimal('233.2')], true)
   end
 end

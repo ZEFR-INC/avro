@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,8 +23,6 @@ import static org.junit.Assert.assertEquals;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,7 +45,8 @@ import org.apache.avro.specific.SpecificDatumReader;
 import org.junit.rules.TemporaryFolder;
 
 /**
- * See also TestTetherTool for an example of how to submit jobs using the thether tool.
+ * See also TestTetherTool for an example of how to submit jobs using the
+ * thether tool.
  */
 public class TestWordCountTether {
 
@@ -69,14 +68,14 @@ public class TestWordCountTether {
     JobConf job = new JobConf();
     Path outputPath = new Path(outputPathStr);
 
-    outputPath.getFileSystem(job).delete(outputPath);
+    outputPath.getFileSystem(job).delete(outputPath, true);
 
     // create the input file
     WordCountUtil.writeLinesFile(inputPath);
 
     File exec = new File(System.getProperty("java.home") + "/bin/java");
 
-    //create a string of the arguments
+    // create a string of the arguments
     List<String> execargs = new ArrayList<>();
     execargs.add("-classpath");
     execargs.add(System.getProperty("java.class.path"));
@@ -95,15 +94,15 @@ public class TestWordCountTether {
 
     // validate the output
     DatumReader<Pair<Utf8, Long>> reader = new SpecificDatumReader<>();
-    InputStream cin = new BufferedInputStream(new FileInputStream(outputPath + "/part-00000.avro"));
-    DataFileStream<Pair<Utf8, Long>> counts = new DataFileStream<>(cin, reader);
+    DataFileStream<Pair<Utf8, Long>> counts = new DataFileStream<>(
+        new BufferedInputStream(new FileInputStream(outputPath + "/part-00000.avro")), reader);
     int numWords = 0;
     for (Pair<Utf8, Long> wc : counts) {
       assertEquals(wc.key().toString(), WordCountUtil.COUNTS.get(wc.key().toString()), wc.value());
       numWords++;
     }
 
-    cin.close();
+    counts.close();
     assertEquals(WordCountUtil.COUNTS.size(), numWords);
 
   }

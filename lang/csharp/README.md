@@ -1,38 +1,38 @@
-# Avro C#
+# Avro C# [![Build Status](https://travis-ci.org/apache/avro.svg?branch=master)](https://travis-ci.org/apache/avro) [![NuGet Package](https://img.shields.io/nuget/v/Apache.Avro.svg)](https://www.nuget.org/packages/Apache.Avro)
+
+ [![Avro](https://avro.apache.org/images/avro-logo.png)](http://avro.apache.org/)
+
+ ## Install
+
+ Install the Apache.Avro package from NuGet:
+
+ ```
+Install-Package Apache.Avro
+```
 
 ## Build & Test
 
-### Windows
+1. Install [.NET SDK 5.0+](https://dotnet.microsoft.com/download/dotnet-core)
+2. `dotnet test`
 
-1. Install [Microsoft Visual Studio Community 2017](https://www.visualstudio.com/downloads/)
-2. `./build.ps1 Test`
+## Project Target Frameworks
 
-### Linux with .NET SDK
+| Project         | Type       | .NET Standard 2.0  | .NET Standard 2.1 | .NET Core 3.1 | .NET 5.0  | .NET 6.0  |
+|:---------------:|:----------:|:------------------:|:-----------------:|:-------------:|:---------:|:---------:|
+| Avro.codegen    | Exe        |                    |                   | ✔️            |✔️        |✔️        |
+| Avro.ipc        | Library    | ✔️                 | ✔️               |               |           |           |
+| Avro.ipc.test   | Unit Tests |                    |                   | ✔️            |✔️        |✔️        |
+| Avro.main       | Library    | ✔️                 | ✔️               |               |           |           |
+| Avro.msbuild    | Library    | ✔️                 | ✔️               |               |           |           |
+| Avro.perf       | Exe        |                    |                   | ✔️            |✔️        |✔️        |
+| Avro.test       | Unit Tests |                    |                   | ✔️            |✔️        |✔️        |
 
-1. Install [.NET Core SDK 2.1+](https://www.microsoft.com/net/download/linux)
-2. `./build.sh test`
+## Dependency package version strategy
 
-### Linux with Mono
+1. Use [`versions.props`](./versions.props) to specify package versions. `PackageReference` elements in `.csproj` files should use only version properties defined in [`versions.props`](./versions.props).
 
-1. Install [Mono v5.18+](https://www.mono-project.com/download/stable/). Install the **mono-devel**
-   and **mono-complete** packages.
-2. Build: `msbuild /t:"restore;build" /p:"Configuration=Release"`
-3. Test: `mono ~/.nuget/packages/nunit.consolerunner/3.9.0/tools/nunit3-console.exe src/apache/test/bin/Release/net40/Avro.test.dll`
-
-## Target Frameworks
-
-The table below shows the frameworks that the various projects target.
-
-Project       | Type         | .NET Standard 2.0  | .NET Core 2.0      | .NET Framework 4.0
-------------  | ------------ |:------------------:|:------------------:|:------------------:
-Avro.codegen  | Exe          |                    | :heavy_check_mark: | :heavy_check_mark:
-Avro.ipc      | Library      |                    |                    | :heavy_check_mark:
-Avro.ipc.test | Unit Tests   |                    |                    | :heavy_check_mark:
-Avro.main     | Exe          | :heavy_check_mark: |                    | :heavy_check_mark:
-Avro.msbuild  | Library      | :heavy_check_mark: |                    | :heavy_check_mark:
-Avro.perf     | Exe          |                    | :heavy_check_mark: | :heavy_check_mark:
-Avro.test     | Unit Tests   |                    | :heavy_check_mark: | :heavy_check_mark:
-
+2. By updating the versions in our libraries, we require users of the library to update to a version equal to or greater than the version we reference. For example, if a user were to reference an older version of Newtonsoft.Json, they would be forced to update to a newer version before they could use a new version of the Avro library.
+In short, we should only update the version of the dependencies in our libraries if we absolutely must for functionality that we require. We leave it up to the users of the library as to whether or not they want the latest and greatest of a particularly dependency. We're only going to require the bare minimum.
 
 ## Notes
 

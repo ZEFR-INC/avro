@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,20 +20,22 @@ package org.apache.avro.mapreduce;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
-
+import java.nio.charset.StandardCharsets;
 import org.apache.avro.mapred.FsInput;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 public class TestFsInput {
@@ -51,7 +53,8 @@ public class TestFsInput {
     conf.set("fs.default.name", "file:///");
     file = new File(DIR.getRoot(), "file.txt");
 
-    try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), Charset.forName("UTF-8")))) {
+    try (
+        PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
       out.print(FILE_CONTENTS);
     }
     fsInput = new FsInput(new Path(file.getPath()), conf);
@@ -93,7 +96,7 @@ public class TestFsInput {
 
   @Test
   public void testRead() throws Exception {
-    byte[] expectedBytes = FILE_CONTENTS.getBytes(Charset.forName("UTF-8"));
+    byte[] expectedBytes = FILE_CONTENTS.getBytes(StandardCharsets.UTF_8);
     byte[] actualBytes = new byte[expectedBytes.length];
     int actualByteCount = fsInput.read(actualBytes, 0, actualBytes.length);
 
@@ -104,7 +107,7 @@ public class TestFsInput {
   @Test
   public void testSeek() throws Exception {
     int seekPos = FILE_CONTENTS.length() / 2;
-    byte[] fileContentBytes = FILE_CONTENTS.getBytes(Charset.forName("UTF-8"));
+    byte[] fileContentBytes = FILE_CONTENTS.getBytes(StandardCharsets.UTF_8);
     byte expectedByte = fileContentBytes[seekPos];
     fsInput.seek(seekPos);
     byte[] readBytes = new byte[1];
