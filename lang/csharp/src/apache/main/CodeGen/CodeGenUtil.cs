@@ -1,4 +1,4 @@
-﻿/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,37 +15,68 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.CodeDom;
 
 namespace Avro
 {
     /// <summary>
-    /// A singleton class containing data used by codegen
+    /// A singleton class containing data used by codegen.
     /// </summary>
     public sealed class CodeGenUtil
     {
-        private static readonly CodeGenUtil instance = new CodeGenUtil();
-        public static CodeGenUtil Instance { get { return instance; } }
+        /// <summary>
+        /// Gets singleton instance of this class.
+        /// </summary>
+        /// <value>
+        /// The instance.
+        /// </value>
+        public static CodeGenUtil Instance { get; } = new CodeGenUtil();
 
+        /// <summary>
+        /// Gets namespaces to import in generated code.
+        /// </summary>
+        /// <value>
+        /// The namespace imports.
+        /// </value>
         public CodeNamespaceImport[] NamespaceImports { get; private set; }
+
+        /// <summary>
+        /// Gets comment included at the top of each generated code file.
+        /// </summary>
+        /// <value>
+        /// The file comment.
+        /// </value>
         public CodeCommentStatement FileComment { get; private set; }
+
+        /// <summary>
+        /// Gets reserved keywords in the C# language.
+        /// </summary>
+        /// <value>
+        /// The reserved keywords.
+        /// </value>
         public HashSet<string> ReservedKeywords { get; private set; }
+
         private const char At = '@';
         private const char Dot = '.';
+
+        /// <summary>
+        /// Fully-qualified name of a <see cref="Object" /> type.
+        /// </summary>
         public const string Object = "System.Object";
 
+        /// <summary>
+        /// Prevents a default instance of the <see cref="CodeGenUtil"/> class from being created.
+        /// </summary>
         private CodeGenUtil()
         {
             NamespaceImports = new CodeNamespaceImport[] {
                 new CodeNamespaceImport("System"),
                 new CodeNamespaceImport("System.Collections.Generic"),
                 new CodeNamespaceImport("System.Text"),
-                new CodeNamespaceImport("Avro"),
-                new CodeNamespaceImport("Avro.Specific") };
+                new CodeNamespaceImport("global::Avro"),
+                new CodeNamespaceImport("global::Avro.Specific") };
 
             FileComment = new CodeCommentStatement(
 @"------------------------------------------------------------------------------
@@ -56,7 +87,7 @@ namespace Avro
  </auto-generated>
  ------------------------------------------------------------------------------");
 
-            // Visual Studio 2010 http://msdn.microsoft.com/en-us/library/x53a06bb.aspx
+            // Visual Studio 2010 https://msdn.microsoft.com/en-us/library/x53a06bb.aspx
             ReservedKeywords = new HashSet<string>() {
                 "abstract","as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class",
                 "const", "continue", "decimal", "default", "delegate", "do", "double", "else", "enum", "event",
@@ -69,10 +100,10 @@ namespace Avro
         }
 
         /// <summary>
-        /// Append @ to all reserved keywords that appear on the given name
+        /// Append @ to all reserved keywords that appear on the given name.
         /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
+        /// <param name="name">The name.</param>
+        /// <returns>updated string.</returns>
         public string Mangle(string name)
         {
             var builder = new StringBuilder();
@@ -89,10 +120,10 @@ namespace Avro
         }
 
         /// <summary>
-        /// Remove all the @
+        /// Remove all the @.
         /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
+        /// <param name="name">The name.</param>
+        /// <returns>updated string.</returns>
         public string UnMangle(string name)
         {
             var builder = new StringBuilder(name.Length);

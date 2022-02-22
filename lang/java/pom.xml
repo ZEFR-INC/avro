@@ -7,7 +7,7 @@
    (the "License"); you may not use this file except in compliance with
    the License.  You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+       https://www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,71 +22,61 @@
   <parent>
     <groupId>org.apache.avro</groupId>
     <artifactId>avro-toplevel</artifactId>
-    <version>1.9.0-SNAPSHOT</version>
-    <relativePath>../../</relativePath>
+    <version>1.12.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
   </parent>
 
   <artifactId>avro-parent</artifactId>
   <packaging>pom</packaging>
 
   <name>Apache Avro Java</name>
-  <url>http://avro.apache.org</url>
+  <url>https://avro.apache.org</url>
   <description>Avro parent Java project</description>
 
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <main.basedir>${project.parent.basedir}</main.basedir>
 
     <!-- version properties for dependencies -->
-
-    <hadoop2.version>2.7.3</hadoop2.version>
-    <jackson.version>2.9.8</jackson.version>
-    <jetty.version>9.4.14.v20181114</jetty.version>
+    <hadoop.version>3.3.1</hadoop.version>
+    <jackson.version>2.12.5</jackson.version>
+    <servlet-api.version>4.0.1</servlet-api.version>
+    <jetty.version>9.4.44.v20210927</jetty.version>
     <jopt-simple.version>5.0.4</jopt-simple.version>
-    <junit.version>4.12</junit.version>
-    <netty.version>3.10.6.Final</netty.version>
-    <protobuf.version>2.6.1</protobuf.version>
-    <thrift.version>0.11.0</thrift.version>
-    <slf4j.version>1.7.25</slf4j.version>
-    <snappy.version>1.1.7.2</snappy.version>
-    <velocity.version>2.0</velocity.version>
-    <maven.version>2.0.11</maven.version>
-    <ant.version>1.10.0</ant.version>
-    <commons-cli.version>1.4</commons-cli.version>
-    <commons-codec.version>1.11</commons-codec.version>
-    <commons-compress.version>1.18</commons-compress.version>
-    <commons-lang.version>3.8.1</commons-lang.version>
-    <commons-logging.version>1.2</commons-logging.version>
-    <tukaani.version>1.8</tukaani.version>
-    <easymock.version>4.0.2</easymock.version>
-    <hamcrest.version>1.3</hamcrest.version>
-    <joda.version>2.10.1</joda.version>
-    <grpc.version>1.17.1</grpc.version>
-    <netty-codec-http2.version>4.1.30.Final</netty-codec-http2.version>
-    <findbugs-annotations.version>1.3.9-1</findbugs-annotations.version>
-    <zstd-jni.version>1.3.7-3</zstd-jni.version>
-
+    <junit.version>4.13.2</junit.version>
+    <netty.version>4.1.72.Final</netty.version>
+    <protobuf.version>3.19.4</protobuf.version>
+    <thrift.version>0.15.0</thrift.version>
+    <slf4j.version>1.7.33</slf4j.version>
+    <reload4j.version>1.2.19</reload4j.version>
+    <snappy.version>1.1.8.4</snappy.version>
+    <velocity.version>2.3</velocity.version>
+    <maven-core.version>3.3.9</maven-core.version>
+    <ant.version>1.10.12</ant.version>
+    <commons-cli.version>1.5.0</commons-cli.version>
+    <commons-compress.version>1.21</commons-compress.version>
+    <commons-text.version>1.9</commons-text.version>
+    <tukaani.version>1.9</tukaani.version>
+    <mockito.version>4.3.1</mockito.version>
+    <hamcrest.version>2.2</hamcrest.version>
+    <grpc.version>1.44.0</grpc.version>
+    <zstd-jni.version>1.5.1-1</zstd-jni.version>
     <!-- version properties for plugins -->
-    <bundle-plugin-version>4.1.0</bundle-plugin-version>
-    <compiler-plugin.version>3.8.0</compiler-plugin.version>
-    <exec-plugin.version>1.6.0</exec-plugin.version>
-    <jar-plugin.version>3.1.0</jar-plugin.version>
-    <javacc-plugin.version>2.6</javacc-plugin.version>
-    <javadoc-plugin.version>3.0.1</javadoc-plugin.version>
-    <plugin-tools-javadoc.version>3.5</plugin-tools-javadoc.version>
-    <maven-site-plugin.version>3.7.1</maven-site-plugin.version>
-    <plugin-plugin.version>3.6.0</plugin-plugin.version>
-    <source-plugin.version>3.0.1</source-plugin.version>
-    <surefire-plugin.version>3.0.0-M3</surefire-plugin.version>
-    <file-management.version>1.2.1</file-management.version>
-    <shade-plugin.version>3.2.0</shade-plugin.version>
-    <archetype-plugin.version>3.0.1</archetype-plugin.version>
+    <archetype-plugin.version>3.2.1</archetype-plugin.version>
+    <bundle-plugin-version>5.1.4</bundle-plugin-version>
+    <exec-plugin.version>3.0.0</exec-plugin.version>
+    <file-management.version>3.0.0</file-management.version>
+    <javacc-plugin.version>3.0.3</javacc-plugin.version>
+    <javacc.version>7.0.10</javacc.version>
   </properties>
 
   <modules>
+    <module>android</module>
     <module>avro</module>
     <module>compiler</module>
     <module>maven-plugin</module>
     <module>ipc</module>
+    <module>ipc-jetty</module>
+    <module>ipc-netty</module>
     <module>trevni</module>
     <module>tools</module>
     <module>mapred</module>
@@ -95,6 +85,7 @@
     <module>archetypes</module>
     <module>grpc</module>
     <module>integration-test</module>
+    <module>perf</module>
   </modules>
 
   <build>
@@ -104,24 +95,47 @@
     <pluginManagement>
       <plugins>
         <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>3.3.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${checkstyle-plugin.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>${checkstyle.version}</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>${compiler-plugin.version}</version>
           <configuration>
-            <source>1.8</source>
-            <target>1.8</target>
             <compilerArgs>
               <arg>-parameters</arg>
+              <!--<arg>-Werror</arg>-->
+              <arg>-Xlint:all</arg>
+              <!-- Override options warnings to support cross-compilation -->
+              <arg>-Xlint:-options</arg>
+              <!-- Temporary lint overrides, to be removed over time. -->
+              <arg>-Xlint:-rawtypes</arg>
+              <arg>-Xlint:-serial</arg>
+              <arg>-Xlint:-unchecked</arg>
+              <!--<arg>-Xlint:sunapi</arg>-->
+              <!--<arg>-XDenableSunApiLintControl</arg>-->
             </compilerArgs>
           </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>${jar-plugin.version}</version>
           <!--We want to be able to resuse the test-jars for mapred
               to test avro-tool
-              see http://maven.apache.org/guides/mini/guide-attached-tests.html
+              see https://maven.apache.org/guides/mini/guide-attached-tests.html
           -->
           <executions>
             <execution>
@@ -142,28 +156,6 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>${surefire-plugin.version}</version>
-          <dependencies>
-            <dependency>
-              <groupId>org.apache.maven.surefire</groupId>
-              <artifactId>surefire-junit47</artifactId>
-              <version>${surefire-plugin.version}</version>
-            </dependency>
-          </dependencies>
-          <executions>
-            <execution>
-              <id>test-with-custom-coders</id>
-              <phase>test</phase>
-              <goals>
-                <goal>test</goal>
-              </goals>
-              <configuration>
-                <systemPropertyVariables>
-                  <org.apache.avro.specific.use_custom_coders>true</org.apache.avro.specific.use_custom_coders>
-                </systemPropertyVariables>
-              </configuration>
-            </execution>
-          </executions>
           <configuration>
             <includes>
               <!-- Avro naming convention for JUnit tests -->
@@ -186,7 +178,7 @@
             <!-- TestSpecificCompiler instantiates a Java compiler to test output results,
                  this does not work with a manifest-only-jar to set the classpath for the javac.
                  This may cause problems on some platforms.
-                 See http://maven.apache.org/plugins/maven-surefire-plugin/examples/class-loading.html
+                 See https://maven.apache.org/plugins/maven-surefire-plugin/examples/class-loading.html
                  for more information. -->
             <useManifestOnlyJar>false</useManifestOnlyJar>
             <!-- configures unit test standard error and standard out to go to a file per test
@@ -199,11 +191,10 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>${javadoc-plugin.version}</version>
           <configuration>
             <links>
-              <link>https://docs.oracle.com/javaee/7/api/</link>
-              <link>http://hadoop.apache.org/common/docs/current/api/</link>
+              <link>https://docs.oracle.com/javase/8/docs/api/</link>
+              <link>https://hadoop.apache.org/docs/current/api/</link>
             </links>
             <tagletArtifacts>
               <tagletArtifact>
@@ -221,14 +212,16 @@
           </configuration>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-source-plugin</artifactId>
-          <version>${source-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.codehaus.mojo</groupId>
+          <groupId>org.javacc.plugin</groupId>
           <artifactId>javacc-maven-plugin</artifactId>
           <version>${javacc-plugin.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>net.java.dev.javacc</groupId>
+              <artifactId>javacc</artifactId>
+              <version>${javacc.version}</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
@@ -236,18 +229,9 @@
           <version>${exec-plugin.version}</version>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-plugin-plugin</artifactId>
-          <version>${plugin-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-shade-plugin</artifactId>
-          <version>${shade-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-antrun-plugin</artifactId>
-          <version>${antrun-plugin.version}</version>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>${spotless-maven-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -287,7 +271,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${checkstyle-plugin.version}</version>
         <configuration>
           <consoleOutput>true</consoleOutput>
           <configLocation>checkstyle.xml</configLocation>
@@ -300,6 +283,37 @@
           <execution>
             <id>checkstyle-check</id>
             <phase>test</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <configuration>
+          <java>
+            <eclipse>
+              <!-- Avro uses Sun's java code style conventions with 2 spaces, this is a modified version of
+                   the eclipse formatter -->
+              <file>${main.basedir}/lang/java/eclipse-java-formatter.xml</file>
+              <version>4.19.0</version>
+            </eclipse>
+            <!-- Temporarily disabled for JDK 16+ builds -->
+            <!--<removeUnusedImports/>-->
+            <replaceRegex>
+              <name>Remove wildcard imports</name>
+              <searchRegex>import\s+[^\*\s]+\*;(\r\n|\r|\n)</searchRegex>
+              <replacement>$1</replacement>
+            </replaceRegex>
+          </java>
+        </configuration>
+        <executions>
+          <execution>
+            <!-- Runs in compile phase to fail fast in case of formatting issues.-->
+            <id>spotless-check</id>
+            <phase>compile</phase>
             <goals>
               <goal>check</goal>
             </goals>
@@ -330,9 +344,20 @@
                   <pluginExecutions>
                     <pluginExecution>
                       <pluginExecutionFilter>
+                        <groupId>com.diffplug.spotless</groupId>
+                        <artifactId>spotless-maven-plugin</artifactId>
+                        <goals>
+                          <goal>check</goal>
+                        </goals>
+                      </pluginExecutionFilter>
+                      <action>
+                        <ignore></ignore>
+                      </action>
+                    </pluginExecution>
+                    <pluginExecution>
+                      <pluginExecutionFilter>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-plugin-plugin</artifactId>
-                        <versionRange>[${plugin-plugin.version},)</versionRange>
                         <goals>
                           <goal>helpmojo</goal>
                           <goal>descriptor</goal>
@@ -398,7 +423,6 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
-            <version>${surefire-plugin.version}</version>
             <configuration>
               <includes>
                 <include>**/DataFileInteropTest*</include>
@@ -440,6 +464,13 @@
         </plugins>
       </build>
     </profile>
+    <!-- This profile is used on tests to validate backwards compatibility with Hadoop 2 -->
+    <profile>
+      <id>hadoop2</id>
+      <properties>
+        <hadoop.version>2.10.1</hadoop.version>
+      </properties>
+    </profile>
   </profiles>
 
   <!-- dependencyManagement can be used to define dependency versions, scopes, and
@@ -474,28 +505,40 @@
           <version>${jetty.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty</artifactId>
-        <version>${netty.version}</version>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-util</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>javax.servlet</groupId>
+          <artifactId>javax.servlet-api</artifactId>
+          <version>${servlet-api.version}</version>
       </dependency>
       <dependency>
         <groupId>net.sf.jopt-simple</groupId>
         <artifactId>jopt-simple</artifactId>
         <version>${jopt-simple.version}</version>
       </dependency>
+      <!-- hadoop's execution environment provides its own jars. -->
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-client</artifactId>
-        <version>${hadoop2.version}</version>
+        <version>${hadoop.version}</version>
+        <exclusions>
+          <exclusion> <!-- GPL -->
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.easymock</groupId>
-        <artifactId>easymock</artifactId>
-        <version>${easymock.version}</version>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>${mockito.version}</version>
       </dependency>
       <dependency>
         <groupId>org.hamcrest</groupId>
-        <artifactId>hamcrest-all</artifactId>
+        <artifactId>hamcrest-library</artifactId>
         <version>${hamcrest.version}</version>
       </dependency>
       <dependency>
@@ -509,11 +552,6 @@
         <version>${commons-compress.version}</version>
       </dependency>
       <dependency>
-        <groupId>joda-time</groupId>
-        <artifactId>joda-time</artifactId>
-        <version>${joda.version}</version>
-      </dependency>
-      <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-core</artifactId>
         <version>${grpc.version}</version>
@@ -522,22 +560,33 @@
         <groupId>io.grpc</groupId>
         <artifactId>grpc-stub</artifactId>
         <version>${grpc.version}</version>
+        <exclusions>
+          <exclusion> <!-- GPL -->
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-netty</artifactId>
         <version>${grpc.version}</version>
+        <exclusions>
+          <exclusion> <!-- GPL -->
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-codec-http2</artifactId>
-        <version>${netty-codec-http2.version}</version>
+        <groupId>org.tukaani</groupId>
+        <artifactId>xz</artifactId>
+        <version>${tukaani.version}</version>
       </dependency>
       <dependency>
         <groupId>com.github.luben</groupId>
         <artifactId>zstd-jni</artifactId>
         <version>${zstd-jni.version}</version>
-        <scope>test</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>

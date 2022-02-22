@@ -7,7 +7,7 @@
    (the "License"); you may not use this file except in compliance with
    the License.  You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+       https://www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,7 @@
   <parent>
     <artifactId>avro-integration-test</artifactId>
     <groupId>org.apache.avro</groupId>
-    <version>1.9.0-SNAPSHOT</version>
+    <version>1.12.0-SNAPSHOT</version>
     <relativePath>../</relativePath>
   </parent>
 
@@ -31,8 +31,13 @@
 
   <name>Apache Avro Codegen Test</name>
   <packaging>jar</packaging>
-  <url>http://avro.apache.org</url>
+  <url>https://avro.apache.org</url>
   <description>Tests generated Avro Specific Java API</description>
+
+  <properties>
+    <main.basedir>${project.parent.parent.parent.basedir}</main.basedir>
+  </properties>
+
   <build>
      <plugins>
        <plugin>
@@ -52,8 +57,15 @@
               <testSourceDirectory>${project.basedir}/src/test/resources/avro</testSourceDirectory>
               <testOutputDirectory>${project.build.directory}/generated-test-sources/java</testOutputDirectory>
               <enableDecimalLogicalType>true</enableDecimalLogicalType>
+              <customLogicalTypeFactories>
+                <logicalTypeFactory>org.apache.avro.codegentest.FixedSizeStringFactory</logicalTypeFactory>
+                <logicalTypeFactory>org.apache.avro.codegentest.CustomEnumLogicalTypeFactory</logicalTypeFactory>
+              </customLogicalTypeFactories>
               <customConversions>
                 <conversion>org.apache.avro.codegentest.CustomDecimalConversion</conversion>
+                <conversion>org.apache.avro.codegentest.FixedSizeStringConversion</conversion>
+                <conversion>org.apache.avro.Conversions$UUIDConversion</conversion>
+                <conversion>org.apache.avro.codegentest.CustomEnumConversion</conversion>
               </customConversions>
             </configuration>
           </execution>
@@ -66,7 +78,24 @@
            </dependency>
          </dependencies>
       </plugin>
-
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-test-source</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.basedir}/target/generated-test-sources/java</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 

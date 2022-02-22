@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,75 +18,87 @@
 package org.apache.avro.file;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
-import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
-import org.apache.commons.compress.compressors.zstandard.ZstdCompressorOutputStream;
+import org.apache.avro.util.NonCopyingByteArrayOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
 
 public class ZstandardCodec extends Codec {
+  public final static int DEFAULT_COMPRESSION = 3;
+  public final static boolean DEFAULT_USE_BUFFERPOOL = false;
+  private static final int DEFAULT_BUFFER_SIZE = 8192;
 
-    static class Option extends CodecFactory {
+  static class Option extends CodecFactory {
+    private final int compressionLevel;
+    private final boolean useChecksum;
+    private final boolean useBufferPool;
 
-        @Override
-        protected Codec createInstance() {
-          return new ZstandardCodec();
-        }
-      }
-
-    private ByteArrayOutputStream outputBuffer;
-
-    @Override
-    public String getName() {
-        return DataFileConstants.ZSTANDARD_CODEC;
+    Option(int compressionLevel, boolean useChecksum, boolean useBufferPool) {
+      this.compressionLevel = compressionLevel;
+      this.useChecksum = useChecksum;
+      this.useBufferPool = useBufferPool;
     }
 
     @Override
-    public ByteBuffer compress(ByteBuffer data) throws IOException {
-        ByteArrayOutputStream baos = getOutputBuffer(data.remaining());
-        try (OutputStream outputStream = new ZstdCompressorOutputStream(baos)) {
-           outputStream.write(data.array(), computeOffset(data), data.remaining());
-        }
-        return ByteBuffer.wrap(baos.toByteArray());
+    protected Codec createInstance() {
+      return new ZstandardCodec(compressionLevel, useChecksum, useBufferPool);
     }
+  }
 
-    @Override
-    public ByteBuffer decompress(ByteBuffer compressedData) throws IOException {
-        ByteArrayOutputStream baos = getOutputBuffer(compressedData.remaining());
-        InputStream bytesIn = new ByteArrayInputStream(
-          compressedData.array(),
-          computeOffset(compressedData),
-          compressedData.remaining());
-        try (InputStream ios = new ZstdCompressorInputStream(bytesIn)) {
-            IOUtils.copy(ios, baos);
-        }
-        return ByteBuffer.wrap(baos.toByteArray());
-    }
+  private final int compressionLevel;
+  private final boolean useChecksum;
+  private final boolean useBufferPool;
 
-    // get and initialize the output buffer for use.
-    private ByteArrayOutputStream getOutputBuffer(int suggestedLength) {
-      if (outputBuffer == null) {
-        outputBuffer = new ByteArrayOutputStream(suggestedLength);
-      }
-      outputBuffer.reset();
-      return outputBuffer;
-    }
+  /**
+   * Create a ZstandardCodec instance with the given compressionLevel, checksum,
+   * and bufferPool option
+   **/
+  public ZstandardCodec(int compressionLevel, boolean useChecksum, boolean useBufferPool) {
+    this.compressionLevel = compressionLevel;
+    this.useChecksum = useChecksum;
+    this.useBufferPool = useBufferPool;
+  }
 
-    @Override
-    public int hashCode() {
-      return getName().hashCode();
-    }
+  @Override
+  public String getName() {
+    return DataFileConstants.ZSTANDARD_CODEC;
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-          if (obj == null || obj.getClass() != getClass())
-            return false;
-          return true;
+  @Override
+  public ByteBuffer compress(ByteBuffer data) throws IOException {
+    NonCopyingByteArrayOutputStream baos = new NonCopyingByteArrayOutputStream(DEFAULT_BUFFER_SIZE);
+    try (OutputStream outputStream = ZstandardLoader.output(baos, compressionLevel, useChecksum, useBufferPool)) {
+      outputStream.write(data.array(), computeOffset(data), data.remaining());
     }
+    return baos.asByteBuffer();
+  }
+
+  @Override
+  public ByteBuffer decompress(ByteBuffer compressedData) throws IOException {
+    NonCopyingByteArrayOutputStream baos = new NonCopyingByteArrayOutputStream(DEFAULT_BUFFER_SIZE);
+    InputStream bytesIn = new ByteArrayInputStream(compressedData.array(), computeOffset(compressedData),
+        compressedData.remaining());
+    try (InputStream ios = ZstandardLoader.input(bytesIn, useBufferPool)) {
+      IOUtils.copy(ios, baos);
+    }
+    return baos.asByteBuffer();
+  }
+
+  @Override
+  public int hashCode() {
+    return getName().hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    return (this == obj) || (obj != null && obj.getClass() == this.getClass());
+  }
+
+  @Override
+  public String toString() {
+    return getName() + "[" + compressionLevel + "]";
+  }
 }

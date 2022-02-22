@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@
 
 package org.apache.avro.grpc;
 
+import com.google.common.io.ByteStreams;
 import org.apache.avro.Protocol;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
@@ -32,11 +33,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import javax.annotation.Nullable;
-
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
-import io.grpc.internal.IoUtils;
 
 /** Marshaller for Avro RPC request. */
 public class AvroRequestMarshaller implements MethodDescriptor.Marshaller<Object[]> {
@@ -66,19 +64,18 @@ public class AvroRequestMarshaller implements MethodDescriptor.Marshaller<Object
       }
       return args;
     } catch (IOException e) {
-      throw Status.INTERNAL.withCause(e).
-          withDescription("Error deserializing avro request arguments").asRuntimeException();
+      throw Status.INTERNAL.withCause(e).withDescription("Error deserializing avro request arguments")
+          .asRuntimeException();
     } finally {
       AvroGrpcUtils.skipAndCloseQuietly(stream);
     }
   }
 
-  private class AvroRequestInputStream extends AvroInputStream {
+  private static class AvroRequestInputStream extends AvroInputStream {
     private final Protocol.Message message;
-    @Nullable
     private Object[] args;
 
-    AvroRequestInputStream(@Nullable Object[] args, Protocol.Message message) {
+    AvroRequestInputStream(Object[] args, Protocol.Message message) {
       this.args = args;
       this.message = message;
     }
@@ -87,7 +84,7 @@ public class AvroRequestMarshaller implements MethodDescriptor.Marshaller<Object
     public int drainTo(OutputStream target) throws IOException {
       int written;
       if (getPartial() != null) {
-        written = (int) IoUtils.copy(getPartial(), target);
+        written = (int) ByteStreams.copy(getPartial(), target);
       } else {
         Schema reqSchema = message.getRequest();
         CountingOutputStream outputStream = new CountingOutputStream(target);

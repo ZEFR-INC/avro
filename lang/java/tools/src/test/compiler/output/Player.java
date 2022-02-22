@@ -19,13 +19,13 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
   public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Player\",\"namespace\":\"avro.examples.baseball\",\"doc\":\"選手 is Japanese for player.\",\"fields\":[{\"name\":\"number\",\"type\":\"int\",\"doc\":\"The number of the player\"},{\"name\":\"first_name\",\"type\":\"string\"},{\"name\":\"last_name\",\"type\":\"string\"},{\"name\":\"position\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"enum\",\"name\":\"Position\",\"symbols\":[\"P\",\"C\",\"B1\",\"B2\",\"B3\",\"SS\",\"LF\",\"CF\",\"RF\",\"DH\"]}}}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
-  private static SpecificData MODEL$ = new SpecificData();
+  private static final SpecificData MODEL$ = new SpecificData();
 
   private static final BinaryMessageEncoder<Player> ENCODER =
-      new BinaryMessageEncoder<Player>(MODEL$, SCHEMA$);
+      new BinaryMessageEncoder<>(MODEL$, SCHEMA$);
 
   private static final BinaryMessageDecoder<Player> DECODER =
-      new BinaryMessageDecoder<Player>(MODEL$, SCHEMA$);
+      new BinaryMessageDecoder<>(MODEL$, SCHEMA$);
 
   /**
    * Return the BinaryMessageEncoder instance used by this class.
@@ -49,7 +49,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
    * @return a BinaryMessageDecoder instance for this class backed by the given SchemaStore
    */
   public static BinaryMessageDecoder<Player> createDecoder(SchemaStore resolver) {
-    return new BinaryMessageDecoder<Player>(MODEL$, SCHEMA$, resolver);
+    return new BinaryMessageDecoder<>(MODEL$, SCHEMA$, resolver);
   }
 
   /**
@@ -73,10 +73,10 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
   }
 
   /** The number of the player */
-  @Deprecated public int number;
-  @Deprecated public java.lang.CharSequence first_name;
-  @Deprecated public java.lang.CharSequence last_name;
-  @Deprecated public java.util.List<avro.examples.baseball.Position> position;
+  private int number;
+  private java.lang.CharSequence first_name;
+  private java.lang.CharSequence last_name;
+  private java.util.List<avro.examples.baseball.Position> position;
 
   /**
    * Default constructor.  Note that this does not initialize fields
@@ -108,7 +108,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
     case 1: return first_name;
     case 2: return last_name;
     case 3: return position;
-    default: throw new org.apache.avro.AvroRuntimeException("Bad index");
+    default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
 
@@ -120,7 +120,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
     case 1: first_name = (java.lang.CharSequence)value$; break;
     case 2: last_name = (java.lang.CharSequence)value$; break;
     case 3: position = (java.util.List<avro.examples.baseball.Position>)value$; break;
-    default: throw new org.apache.avro.AvroRuntimeException("Bad index");
+    default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
 
@@ -131,6 +131,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
   public int getNumber() {
     return number;
   }
+
 
   /**
    * Sets the value of the 'number' field.
@@ -149,6 +150,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
     return first_name;
   }
 
+
   /**
    * Sets the value of the 'first_name' field.
    * @param value the value to set.
@@ -165,6 +167,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
     return last_name;
   }
 
+
   /**
    * Sets the value of the 'last_name' field.
    * @param value the value to set.
@@ -180,6 +183,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
   public java.util.List<avro.examples.baseball.Position> getPosition() {
     return position;
   }
+
 
   /**
    * Sets the value of the 'position' field.
@@ -226,6 +230,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
   /**
    * RecordBuilder for Player instances.
    */
+  @org.apache.avro.specific.AvroGenerated
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<Player>
     implements org.apache.avro.data.RecordBuilder<Player> {
 
@@ -237,7 +242,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
 
     /** Creates a new Builder */
     private Builder() {
-      super(SCHEMA$);
+      super(SCHEMA$, MODEL$);
     }
 
     /**
@@ -269,7 +274,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
      * @param other The existing instance to copy.
      */
     private Builder(avro.examples.baseball.Player other) {
-      super(SCHEMA$);
+      super(SCHEMA$, MODEL$);
       if (isValidValue(fields()[0], other.number)) {
         this.number = data().deepCopy(fields()[0].schema(), other.number);
         fieldSetFlags()[0] = true;
@@ -296,6 +301,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
     public int getNumber() {
       return number;
     }
+
 
     /**
       * Sets the value of the 'number' field.
@@ -338,6 +344,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
       return first_name;
     }
 
+
     /**
       * Sets the value of the 'first_name' field.
       * @param value The value of 'first_name'.
@@ -377,6 +384,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
       return last_name;
     }
 
+
     /**
       * Sets the value of the 'last_name' field.
       * @param value The value of 'last_name'.
@@ -415,6 +423,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
     public java.util.List<avro.examples.baseball.Position> getPosition() {
       return position;
     }
+
 
     /**
       * Sets the value of the 'position' field.
@@ -485,7 +494,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
 
   @Override protected boolean hasCustomCoders() { return true; }
 
-  @Override protected void customEncode(org.apache.avro.io.Encoder out)
+  @Override public void customEncode(org.apache.avro.io.Encoder out)
     throws java.io.IOException
   {
     out.writeInt(this.number);
@@ -509,7 +518,7 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
 
   }
 
-  @Override protected void customDecode(org.apache.avro.io.ResolvingDecoder in)
+  @Override public void customDecode(org.apache.avro.io.ResolvingDecoder in)
     throws java.io.IOException
   {
     org.apache.avro.Schema.Field[] fieldOrder = in.readFieldOrderIfDiff();
@@ -574,3 +583,13 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
     }
   }
 }
+
+
+
+
+
+
+
+
+
+

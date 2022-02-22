@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,15 +17,17 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Avro
 {
     /// <summary>
-    /// Class to store schema name, namespace and enclosing namespace
+    /// Class to store schema name, namespace, enclosing namespace and documentation
     /// </summary>
     public class SchemaName
     {
+        // cache the full name, so it won't allocate new strings on each call
+        private String fullName;
+        
         /// <summary>
         /// Name of the schema
         /// </summary>
@@ -42,9 +44,14 @@ namespace Avro
         public String EncSpace { get; private set; }
 
         /// <summary>
+        /// Documentation for the schema
+        /// </summary>
+        public String Documentation { get; private set; }
+
+        /// <summary>
         /// Namespace.Name of the schema
         /// </summary>
-        public String Fullname { get { return string.IsNullOrEmpty(Namespace) ? this.Name : Namespace + "." + this.Name; } }
+        public String Fullname { get { return fullName; } }
 
         /// <summary>
         /// Namespace of the schema
@@ -57,14 +64,17 @@ namespace Avro
         /// <param name="name">name of the schema</param>
         /// <param name="space">namespace of the schema</param>
         /// <param name="encspace">enclosing namespace of the schema</param>
-        public SchemaName(String name, String space, String encspace)
+        /// <param name="documentation">documentation o fthe schema</param>
+        public SchemaName(String name, String space, String encspace, String documentation)
         {
             if (name == null)
             {                         // anonymous
                 this.Name = this.Space = null;
                 this.EncSpace = encspace;   // need to save enclosing namespace for anonymous types, so named types within the anonymous type can be resolved
             }
+#pragma warning disable CA1307 // Specify StringComparison
             else if (!name.Contains("."))
+#pragma warning restore CA1307 // Specify StringComparison
             {                          // unqualified name
                 this.Space = space;    // use default space
                 this.Name = name;
@@ -77,6 +87,8 @@ namespace Avro
                 this.Name = parts[parts.Length - 1];
                 this.EncSpace = encspace;
             }
+            this.Documentation = documentation;
+            fullName = string.IsNullOrEmpty(Namespace) ? this.Name : Namespace + "." + this.Name;
         }
 
         /// <summary>
@@ -99,6 +111,7 @@ namespace Avro
             if (null != this.Name)  // write only if not anonymous
             {
                 JsonHelper.writeIfNotNullOrEmpty(writer, "name", this.Name);
+                JsonHelper.writeIfNotNull(writer, "doc", this.Documentation);
                 if (!String.IsNullOrEmpty(this.Space))
                     JsonHelper.writeIfNotNullOrEmpty(writer, "namespace", this.Space);
                 else if (!String.IsNullOrEmpty(this.EncSpace)) // need to put enclosing name space for code generated classes
@@ -133,9 +146,12 @@ namespace Avro
             return obj1 == null ? obj2 == null : obj1.Equals(obj2);
         }
 
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
+#pragma warning disable CA1307 // Specify StringComparison
             return string.IsNullOrEmpty(Fullname) ? 0 : 29 * Fullname.GetHashCode();
+#pragma warning restore CA1307 // Specify StringComparison
         }
     }
 
@@ -202,11 +218,12 @@ namespace Avro
         /// <param name="name">name of the schema</param>
         /// <param name="space">namespace of the schema</param>
         /// <param name="encspace">enclosing namespace of the schema</param>
+        /// <param name="documentation">documentation for the schema</param>
         /// <param name="schema">schema object found</param>
         /// <returns>true if name is found in the map, false otherwise</returns>
-        public bool TryGetValue(string name, string space, string encspace, out NamedSchema schema)
+        public bool TryGetValue(string name, string space, string encspace, string documentation, out NamedSchema schema)
         {
-            SchemaName schemaname = new SchemaName(name, space, encspace);
+            SchemaName schemaname = new SchemaName(name, space, encspace, documentation);
             return Names.TryGetValue(schemaname, out schema);
         }
 

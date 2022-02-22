@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -71,12 +71,14 @@ namespace Avro
         /// Static function to return a new instance of the named schema
         /// </summary>
         /// <param name="jo">JSON object of the named schema</param>
+        /// <param name="props">dictionary that provides access to custom properties</param>
         /// <param name="names">list of named schemas already read</param>
         /// <param name="encspace">enclosing namespace of the named schema</param>
         /// <returns></returns>
         internal static NamedSchema NewInstance(JObject jo, PropertyMap props, SchemaNames names, string encspace)
         {
             string type = JsonHelper.GetRequiredString(jo, "type");
+            string doc = JsonHelper.GetOptionalString(jo, "doc");
             switch (type)
             {
                 case "fixed":
@@ -89,7 +91,7 @@ namespace Avro
                     return RecordSchema.NewInstance(Type.Error, jo, props, names, encspace);
                 default:
                     NamedSchema result;
-                    if (names.TryGetValue(type, null, encspace, out result))
+                    if (names.TryGetValue(type, null, encspace, doc, out result))
                         return result;
                     return null;
             }
@@ -127,7 +129,8 @@ namespace Avro
         {
             String n = JsonHelper.GetOptionalString(jtok, "name");      // Changed this to optional string for anonymous records in messages
             String ns = JsonHelper.GetOptionalString(jtok, "namespace");
-            return new SchemaName(n, ns, encspace);
+            String d = JsonHelper.GetOptionalString(jtok, "doc");
+            return new SchemaName(n, ns, encspace, d);
         }
 
         /// <summary>
@@ -135,7 +138,7 @@ namespace Avro
         /// </summary>
         /// <param name="jtok">JSON object to read</param>
         /// <param name="space">namespace of the name this alias is for</param>
-        /// <param name="encspace">enclosing namespace of the name this alias is for</param>
+        /// <param name="encspace">enclosing namespace of the name this alias is for</param>        
         /// <returns>List of SchemaName that represents the list of alias. If no 'aliases' specified, then it returns null.</returns>
         protected static IList<SchemaName> GetAliases(JToken jtok, string space, string encspace)
         {
@@ -144,19 +147,27 @@ namespace Avro
                 return null;
 
             if (jaliases.Type != JTokenType.Array)
-                throw new SchemaParseException("Aliases must be of format JSON array of strings");
+                throw new SchemaParseException($"Aliases must be of format JSON array of strings at '{jtok.Path}'");
 
             var aliases = new List<SchemaName>();
             foreach (JToken jalias in jaliases)
             {
                 if (jalias.Type != JTokenType.String)
-                    throw new SchemaParseException("Aliases must be of format JSON array of strings");
+                    throw new SchemaParseException($"Aliases must be of format JSON array of strings at '{jtok.Path}'");
 
-                aliases.Add(new SchemaName((string)jalias, space, encspace));
+                aliases.Add(new SchemaName((string)jalias, space, encspace, null));
             }
             return aliases;
         }
 
+        /// <summary>
+        /// Determines whether the given schema name is one of this <see cref="NamedSchema"/>'s
+        /// aliases.
+        /// </summary>
+        /// <param name="name">Schema name to test.</param>
+        /// <returns>
+        /// True if <paramref name="name"/> is one of this schema's aliases; false otherwise.
+        /// </returns>
         protected bool InAliases(SchemaName name)
         {
             if (null != aliases)

@@ -7,7 +7,7 @@
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
 #
-#   http://www.apache.org/licenses/LICENSE-2.0
+#   https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
@@ -16,11 +16,20 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 3.1)
 
 set (CMAKE_LEGACY_CYGWIN_WIN32 0)
 
-cmake_policy (SET CMP0042 NEW)
+if (NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 11)
+endif()
+
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.0)
+    # Enable MACOSX_RPATH by default
+    cmake_policy (SET CMP0042 NEW)
+endif()
 
 if (NOT DEFINED CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_NO_WARNINGS)
     set (CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_NO_WARNINGS ON)
@@ -34,8 +43,10 @@ else (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt)
 endif (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt)
 
 string(REPLACE "\n" "" AVRO_VERSION  ${AVRO_VERSION})
-set (AVRO_VERSION_MAJOR ${AVRO_VERSION})
-set (AVRO_VERSION_MINOR "0")
+string(REPLACE "." ";" AVRO_VERSION  ${AVRO_VERSION})
+list(GET AVRO_VERSION 0 AVRO_VERSION_MAJOR)
+list(GET AVRO_VERSION 1 AVRO_VERSION_MINOR)
+list(GET AVRO_VERSION 2 AVRO_VERSION_PATCH)
 
 project (Avro-cpp)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR})
@@ -50,18 +61,17 @@ if (WIN32 AND NOT CYGWIN AND NOT MSYS)
         -DBOOST_IOSTREAMS_DYN_LINK
         -DBOOST_PROGRAM_OPTIONS_DYN_LINK
         -DBOOST_ALL_NO_LIB)
-else()
-# Replease c++11 with c++17 below in case C++ 17 should be used
-    add_definitions(-std=c++11 -fPIC)
 endif()
 
 if (CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "-Wall")
-    set(CMAKE_CXX_FLAGS_DEBUG "-fstack-protector-all -D_GLIBCXX_DEBUG")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+if (AVRO_ADD_PROTECTOR_FLAGS)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fstack-protector-all -D_GLIBCXX_DEBUG")
     # Unset _GLIBCXX_DEBUG for avrogencpp.cc because using Boost Program Options
     # leads to linking errors when compiling with _GLIBCXX_DEBUG as described on
-    # http://stackoverflow.com/questions/19729036/
+    # https://stackoverflow.com/questions/19729036/
     set_source_files_properties(impl/avrogencpp.cc PROPERTIES COMPILE_FLAGS "-U_GLIBCXX_DEBUG")
+endif ()
 endif ()
 
 
@@ -76,6 +86,7 @@ if (SNAPPY_FOUND)
 else (SNAPPY_FOUND)
     set(SNAPPY_PKG "")
     set(SNAPPY_LIBRARIES "")
+    set(SNAPPY_INCLUDE_DIR "")
     message("Disabled snappy codec. libsnappy not found.")
 endif (SNAPPY_FOUND)
 
@@ -106,17 +117,19 @@ set_property (TARGET avrocpp
     APPEND PROPERTY COMPILE_DEFINITIONS AVRO_DYN_LINK)
 
 add_library (avrocpp_s STATIC ${AVRO_SOURCE_FILES})
+target_include_directories(avrocpp_s PRIVATE ${SNAPPY_INCLUDE_DIR})
 
 set_property (TARGET avrocpp avrocpp_s
     APPEND PROPERTY COMPILE_DEFINITIONS AVRO_SOURCE)
 
 set_target_properties (avrocpp PROPERTIES
-    VERSION ${AVRO_VERSION_MAJOR}.${AVRO_VERSION_MINOR})
+    VERSION ${AVRO_VERSION_MAJOR}.${AVRO_VERSION_MINOR}.${AVRO_VERSION_PATCH})
 
 set_target_properties (avrocpp_s PROPERTIES
-    VERSION ${AVRO_VERSION_MAJOR}.${AVRO_VERSION_MINOR})
+    VERSION ${AVRO_VERSION_MAJOR}.${AVRO_VERSION_MINOR}.${AVRO_VERSION_PATCH})
 
 target_link_libraries (avrocpp ${Boost_LIBRARIES} ${SNAPPY_LIBRARIES})
+target_include_directories(avrocpp PRIVATE ${SNAPPY_INCLUDE_DIR})
 
 add_executable (precompile test/precompile.cc)
 
@@ -147,6 +160,7 @@ gen (tree1 tr1)
 gen (tree2 tr2)
 gen (crossref cr)
 gen (primitivetypes pt)
+gen (cpp_reserved_words cppres)
 
 add_executable (avrogencpp impl/avrogencpp.cc)
 target_link_libraries (avrogencpp avrocpp_s ${Boost_LIBRARIES} ${SNAPPY_LIBRARIES})
@@ -171,6 +185,9 @@ unittest (DataFileTests)
 unittest (JsonTests)
 unittest (AvrogencppTests)
 unittest (CompilerTests)
+unittest (AvrogencppTestReservedWords)
+
+add_dependencies (AvrogencppTestReservedWords cpp_reserved_words_hh)
 
 add_dependencies (AvrogencppTests bigrecord_hh bigrecord_r_hh bigrecord2_hh
     tweet_hh
